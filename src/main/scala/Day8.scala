@@ -88,11 +88,11 @@ m.....................d7...................J......
     }
     .toList
 
-  private def start(input: List[List[Block]], metFrequencies: List[Char]): List[List[Block]] = {
+  private def start(input: List[List[Block]], metFrequencies: List[Char], size: List[Int] = List(1)): List[List[Block]] = {
     def createAntinodesInMap(input: List[List[Block]], currentFrequencyToProcess: List[NonEmptyBlock]): List[List[Block]] = {
-      def createAntinodePair(one: NonEmptyBlock, another: NonEmptyBlock): List[NonEmptyBlock] = {
-        val xDifference = abs(one.x - another.x)
-        val yDifference = abs(one.y - another.y)
+      def createAntinodePair(one: NonEmptyBlock, another: NonEmptyBlock, gridDistance: Int): List[NonEmptyBlock] = {
+        val xDifference = abs(one.x - another.x) * gridDistance
+        val yDifference = abs(one.y - another.y) * gridDistance
       
         val first = if (one.x < another.x && one.y < another.y) {
           List(NonEmptyBlock(getFrequencyFromCoordante(one.x - xDifference, one.y - yDifference), true, one.x - xDifference, one.y - yDifference))
@@ -113,7 +113,11 @@ m.....................d7...................J......
         } else {
           List(NonEmptyBlock(getFrequencyFromCoordante(another.x + xDifference, another.y + yDifference), true, another.x + xDifference, another.y + yDifference))
         }
-        first ++ second
+        if (size == List(1)) {
+          first ++ second
+        } else {
+          first ++ second ++ List(one.copy(antinode = true), another.copy(antinode = true))
+        }
       }
       val newAntinodes: List[NonEmptyBlock] = {
         (for {
@@ -121,7 +125,7 @@ m.....................d7...................J......
           another <- currentFrequencyToProcess
           if one != another
         } yield (
-          createAntinodePair(one, another)
+          size.flatMap(createAntinodePair(one, another, _))
         )).flatten
       }
       input.zipWithIndex.map { case (row, y) =>
@@ -159,7 +163,7 @@ m.....................d7...................J......
       getNextFrequency(input) match
         case Some(frequency) => {
           val currentFrequencyToProcess = collectAllOfAFrequency(input, frequency)
-          start(createAntinodesInMap(input, currentFrequencyToProcess), metFrequencies :+ frequency)
+          start(createAntinodesInMap(input, currentFrequencyToProcess), metFrequencies :+ frequency, size)
         } 
         case None => input
     }
@@ -174,5 +178,7 @@ m.....................d7...................J......
   }
 
   def day8task1: Int = countAntinodes(start(input, List.empty))
+
+  def day8task2: Int = countAntinodes(start(input, List.empty, (1 to input.head.size).toList))
   
 }
